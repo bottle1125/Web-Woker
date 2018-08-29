@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>web-worker-demo</title>
+</head>
+<body>
+    <button onclick="sayHi()">Say Hi</button>
+    <button onclick="stop()">Stop Worker</button>
+
+    <div id="result"></div>
+    <div id="error"></div>
+    
+    <div id="log"></div>
+
+    <script id="worker1" type="javascript/worker">
+        self.onmessage = function(e) {
+            self.postMessage('msg from worker');
+        }
+    </script>
+    <script>
+        function sayHi() {
+            worker.postMessage({
+                'cmd': 'start',
+                'msg': 'Hi'
+            });
+        }
+
+        function stop() {
+            worker.postMessage({
+                'cmd': 'stop',
+                'msg': '..'
+            });
+        }
+        var worker = new Worker('./worker.js');
+        
+        worker.addEventListener('message', function(e) {
+            document.getElementById('result').textContent = e.data;
+        }, false);
+
+        worker.addEventListener('error', function(e) {
+            document.getElementById('error').textContent = [
+                'ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message
+            ].join('');
+        }, false);
+
+
+        // inline Worker
+        function log(msg) {
+            var fragment = document.createDocumentFragment();
+            fragment.appendChild(document.createTextNode(msg));
+            fragment.appendChild(document.createElement('br'));
+
+            document.querySelector('#log').appendChild(fragment);
+        }
+
+        var blob = new Blob([document.querySelector('#worker1').textContent]);
+
+        var worker1 = new Worker(window.URL.createObjectURL(blob));
+        worker1.onmessage = function(e) {
+            log('Received: ' + e.data);
+        }
+        worker1.postMessage('hello');
+    </script>
+</body>
+</html>
